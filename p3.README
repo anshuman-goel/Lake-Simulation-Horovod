@@ -18,6 +18,9 @@ Implementation:
 The number of pebbles was divided across the two nodes/grids. Then, we created the send and receive buffers with dimensions 2*N and created tensor variables for them.
 Since we have to receive the two top rows of rank 1 in rank 0, we need two extra rows to accomodate these values in the u_init and ut_init arrays. Hence, the dimensions are declared as N+2 * N.
 Similarly, the rank 1 dimensions are also declared as N+2 * N.
+After the values are calculated from the pebbles, the send buffer of rank 0 is filled with rows N-2 and N-1 while the send buffer of rank 1 is filled with rows 2 and 3 of their respective grids.
+Now, we broadcast from the send buffer of rank 0 to rank 1's receive buffer and vice versa. The actual grids are then updated through the receive buffer in the rows N and N+1 for rank 0, and rows 0 and 1 for rank 1.
+Using these updated values, the computation iterates all over again.
 
 Results/Discussion:
 

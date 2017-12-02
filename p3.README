@@ -14,6 +14,11 @@ Implementing multi-node/multi-GPU Tensorflow via MPI through Horovod
 Compilation and Execution Instructions:
 (Refer to the HW description)
 
+Implementation:
+The number of pebbles was divided across the two nodes/grids. Then, we created the send and receive buffers with dimensions 2*N and created tensor variables for them.
+Since we have to receive the two top rows of rank 1 in rank 0, we need two extra rows to accomodate these values in the u_init and ut_init arrays. Hence, the dimensions are declared as N+2 * N.
+Similarly, the rank 1 dimensions are also declared as N+2 * N.
+
 Results/Discussion:
 
 Compare the execution time of your lake-horo.py against your lake.py using the parameters N=512, npebs=40, num_iter=400. 
@@ -43,6 +48,7 @@ Elapsed time: 77.0905389786 seconds
 There is a huge difference between the execution time of lake.py on CPU cores (without MPI), and running lake-horo.py (with MPI).
 This accounts mainly because of the communication overhead between the two nodes in the latter case. In every iteration of tensorflow, the bottom rank will communicate its top rows to the top rank's bottom rows.
 The top rank will communicate its bottom rows to the bottom rank's top rows.   
+
 
 2. GPU Titanx
 

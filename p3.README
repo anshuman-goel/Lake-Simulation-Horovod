@@ -68,3 +68,10 @@ totalMemory: 11.92GiB freeMemory: 11.71GiB
 2017-12-02 17:12:42.812182: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1120] Creating TensorFlow device (/device:GPU:0) -> (device: 0, name: GeForce GTX TITAN X, pci bus id: 0000:03:00.0, compute capability: 5.2)
 Elapsed time: 8.77441382408 seconds
 Elapsed time: 8.76057910919 seconds
+
+
+
+
+Lessons learnt:
+We understood how Horovod uses MPI and TensorFlow to perform communication and computations across multiple nodes/GPUs in a cluster. 
+we also learnt how to write TensorFlow programs, and also how to create graphs in TensorFlow and its execution model.

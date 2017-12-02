@@ -1,0 +1,33 @@
+GPU Titanx
+
+[kgondha@c76 P3]$ mpirun -np 2 ./lake-horo.py 512 40 400
+2017-12-02 17:12:42.810391: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1030] Found device 0 with properties:
+name: GeForce GTX TITAN X major: 5 minor: 2 memoryClockRate(GHz): 1.076
+pciBusID: 0000:03:00.0
+totalMemory: 11.92GiB freeMemory: 11.71GiB
+2017-12-02 17:12:42.810448: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1120] Creating TensorFlow device (/device:GPU:0) -> (device: 0, name: GeForce GTX TITAN X, pci bus id: 0000:03:00.0, compute capability: 5.2)
+2017-12-02 17:12:42.812116: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1030] Found device 0 with properties:
+name: GeForce GTX TITAN X major: 5 minor: 2 memoryClockRate(GHz): 1.076
+pciBusID: 0000:03:00.0
+totalMemory: 11.92GiB freeMemory: 11.71GiB
+2017-12-02 17:12:42.812182: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1120] Creating TensorFlow device (/device:GPU:0) -> (device: 0, name: GeForce GTX TITAN X, pci bus id: 0000:03:00.0, compute capability: 5.2)
+Elapsed time: 8.77441382408 seconds
+Elapsed time: 8.76057910919 seconds
+
+
+
+GPU gtx480 ( actually runs on CPU )
+
+[kgondha@c18 P3]$ mpirun -np 2 ./lake-horo.py 512 40 400
+2017-12-02 17:02:55.464270: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1030] Found device 0 with properties:
+name: GeForce GTX 480 major: 2 minor: 0 memoryClockRate(GHz): 1.401
+pciBusID: 0000:03:00.0
+totalMemory: 1.44GiB freeMemory: 1.34GiB
+2017-12-02 17:02:55.464326: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1093] Ignoring visible gpu device (device: 0, name: GeForce GTX 480, pci bus id: 0000:03:00.0, compute capability: 2.0) with Cuda compute capability 2.0. The minimum required Cuda capability is 3.0.
+2017-12-02 17:02:55.464714: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1030] Found device 0 with properties:
+name: GeForce GTX 480 major: 2 minor: 0 memoryClockRate(GHz): 1.401
+pciBusID: 0000:03:00.0
+totalMemory: 1.44GiB freeMemory: 1.34GiB
+2017-12-02 17:02:55.464762: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1093] Ignoring visible gpu device (device: 0, name: GeForce GTX 480, pci bus id: 0000:03:00.0, compute capability: 2.0) with Cuda compute capability 2.0. The minimum required Cuda capability is 3.0.
+Elapsed time: 77.0818769932 seconds
+Elapsed time: 77.0905389786 seconds

@@ -99,34 +99,36 @@ __global__ static void evolve(double *un, double *uc, double *uo,
 
   int i, j;
   unsigned int bid = blockDim.x * blockIdx.x + threadIdx.x;
-
+  
   //set the origin grid points for each quadrant for every processor node
   if(*rank == 0){
+
     i = (bid / (*n/2));
     j = (bid % (*n/2));
+    printf("i = %d\n", i);
   }
+  // else if (*rank == 1){
+
+  //   i = (bid / (*n/2));
+  //   j = (bid % (*n/2)+ *n/2);
+  // }
   else if (*rank == 1){
 
-    i = (bid / (*n/2));
-    j = (bid % (*n/2)+ *n/2);
-  }
-  else if (*rank == 2){
-
     i = (bid / (*n/2)+ *n/2);
     j = (bid % (*n/2));
   }
-  else if (*rank == 3){
+  // else if (*rank == 3){
 
-    i = (bid / (*n/2)+ *n/2);
-    j = (bid % (*n/2)+ *n/2);
-  }
+  //   i = (bid / (*n/2)+ *n/2);
+  //   j = (bid % (*n/2)+ *n/2);
+  // }
 
   //convert a 2D matrix co-ordinates into a 1-D matrix co-ordinate
   int idx = i * *n + j;
 
   //values at lake edge points are set to zero
-  if( i == 0 || i == *n - 1 || j == 0 || j == *n - 1
-      || i == *n - 2 || i == 1 || j == *n - 2 || j == 1){
+  if( i == 0 || i == *n - 1 || j == 0 || j == *n/2 - 1
+      || i == *n - 2 || i == 1 || j == *n/2 - 2 || j == 1){
 
     un[idx] = 0.;
   }
@@ -156,7 +158,7 @@ __global__ static void evolve(double *un, double *uc, double *uo,
     uo[idx] = uc[idx];
     uc[idx] = un[idx];
     //move the timestamp forward by dt
-    (*t) = (*t) + *dt;
+    (*t) = (*t) + 1.0;
 }
 
 //sends 2 rows of length k ( = n/2 when using it in MPI grid communication)
@@ -285,24 +287,24 @@ void run_gpu(double *u, double *u0, double *u1, double *pebbles, int n,
     c_min = 0;
     c_max = n / 2 + 1;
   }
+  // else if (rank == 1){
+  //   r_min = 0;
+  //   r_max = n / 2 + 1;
+  //   c_min = n / 2 - 2;
+  //   c_max = n - 1;
+  // }
   else if (rank == 1){
-    r_min = 0;
-    r_max = n / 2 + 1;
-    c_min = n / 2 - 2;
-    c_max = n - 1;
-  }
-  else if (rank == 2){
     r_min = n / 2 - 2;
     r_max = n - 1;
     c_min = 0;
     c_max = n / 2 + 1;
   }
-  else if (rank == 3){
-    r_min = n / 2 - 2;
-    r_max = n - 1;
-    c_min = n / 2 - 2;
-    c_max = n - 1;
-  }
+  // else if (rank == 3){
+  //   r_min = n / 2 - 2;
+  //   r_max = n - 1;
+  //   c_min = n / 2 - 2;
+  //   c_max = n - 1;
+  // }
 
 
   //compute state of the grid over the given time
@@ -322,44 +324,44 @@ void run_gpu(double *u, double *u0, double *u1, double *pebbles, int n,
     //the exchange of the extra rows and columns and diagonal points
     if (rank == 0){
       //node 0 sends and receives rows and columns from 1 and 2
-      Send_Col(0, c_max-3, n/2, 1, u);
-      Send_Row(r_max-3, 0, n/2, 2, u);
-      Recv_Col(0, c_max-1, n/2, 1, u);
-      Recv_Row(r_max-1, 0, n/2, 2, u);
+      // Send_Col(0, c_max-3, n/2, 1, u);
+      Send_Row(r_max-3, 0, n/2, 1, u);
+      // Recv_Col(0, c_max-1, n/2, 1, u);
+      Recv_Row(r_max-1, 0, n/2, 1, u);
       //node 0 sends and receives diagonal points from 3
-      MPI_Send(u+(r_max-2)*n+c_max-2, 1, MPI_DOUBLE, 3, 0, MPI_COMM_WORLD);
-      MPI_Recv(u+(r_max-1)*n+c_max-1, 1, MPI_DOUBLE, 3, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+      // MPI_Send(u+(r_max-2)*n+c_max-2, 1, MPI_DOUBLE, 3, 0, MPI_COMM_WORLD);
+      // MPI_Recv(u+(r_max-1)*n+c_max-1, 1, MPI_DOUBLE, 3, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
+    // else if(rank == 1){
+    //   //node 1 sends and receives rows and columns from 0 and 3
+    //   Recv_Col(0, c_min, n/2, 0, u);
+    //   Send_Col(0, c_min+2, n/2, 0, u);
+    //   Send_Row(r_max-3, n/2, n/2, 3, u);
+    //   Recv_Row(r_max-1, n/2, n/2, 3, u);
+    //   //node 1 sends and receives diagonal points from 2
+    //   MPI_Send(u+(r_max-2)*n+c_min+2, 1, MPI_DOUBLE, 2, 0, MPI_COMM_WORLD);
+    //   MPI_Recv(u+(r_max-1)*n+c_min+1, 1, MPI_DOUBLE, 2, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    // }
     else if(rank == 1){
-      //node 1 sends and receives rows and columns from 0 and 3
-      Recv_Col(0, c_min, n/2, 0, u);
-      Send_Col(0, c_min+2, n/2, 0, u);
-      Send_Row(r_max-3, n/2, n/2, 3, u);
-      Recv_Row(r_max-1, n/2, n/2, 3, u);
-      //node 1 sends and receives diagonal points from 2
-      MPI_Send(u+(r_max-2)*n+c_min+2, 1, MPI_DOUBLE, 2, 0, MPI_COMM_WORLD);
-      MPI_Recv(u+(r_max-1)*n+c_min+1, 1, MPI_DOUBLE, 2, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    }
-    else if(rank == 2){
       //node 2 sends and receives rows and columns from 0 and 3
       Recv_Row(r_min, 0, n/2, 0, u);
       Send_Row(r_min+2, 0, n/2, 0, u);
-      Send_Col(n/2, c_max-3, n/2, 3, u);
-      Recv_Col(n/2, c_max-1, n/2, 3, u);
+      // Send_Col(n/2, c_max-3, n/2, 3, u);
+      // Recv_Col(n/2, c_max-1, n/2, 3, u);
       //node 2 sends and receives diagonal points from 1
-      MPI_Recv(u+(r_min+1)*n+c_max-1, 1, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-      MPI_Send(u+(r_min+2)*n+c_max-2, 1, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD);
+      // MPI_Recv(u+(r_min+1)*n+c_max-1, 1, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+      // MPI_Send(u+(r_min+2)*n+c_max-2, 1, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD);
     }
-    else if(rank == 3){
-      //node 3 sends and receives rows and columns from 1 and 2
-      Recv_Row(r_min, n/2, n/2, 1, u);
-      Recv_Col(n/2, c_min, n/2, 2, u);
-      Send_Row(r_min+2, n/2, n/2, 1, u);
-      Send_Col(n/2, c_min+2, n/2, 2, u);
-      //node 3 sends and receives diagonal points from 0
-      MPI_Recv(u+(r_min+1)*n+c_min+1, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-      MPI_Send(u+(r_min+2)*n+c_min+2, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
-    }
+    // else if(rank == 3){
+    //   //node 3 sends and receives rows and columns from 1 and 2
+    //   Recv_Row(r_min, n/2, n/2, 1, u);
+    //   Recv_Col(n/2, c_min, n/2, 2, u);
+    //   Send_Row(r_min+2, n/2, n/2, 1, u);
+    //   Send_Col(n/2, c_min+2, n/2, 2, u);
+    //   //node 3 sends and receives diagonal points from 0
+    //   MPI_Recv(u+(r_min+1)*n+c_min+1, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    //   MPI_Send(u+(r_min+2)*n+c_min+2, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+    // }
     MPI_Barrier(MPI_COMM_WORLD);
     CUDA_CALL(cudaMemcpy( uc_d, u, sizeof(double) * n * n, cudaMemcpyHostToDevice ));
   }

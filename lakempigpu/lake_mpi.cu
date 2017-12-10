@@ -46,7 +46,7 @@ int main(int argc, char *argv[]){
     return 0;
   }
 
-  int     npoints   = atoi(argv[1]);
+  int     npoints   = 2*atoi(argv[1]);
   int     npebs     = atoi(argv[2]);
   double  end_time  = (double)atof(argv[3]);
   int     nthreads  = atoi(argv[4]);
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]){
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
   //only allow 4 processsors
-  if(size != 4){
+  if(size != 2){
     exit(1);
   }
 
@@ -107,13 +107,13 @@ int main(int argc, char *argv[]){
 
     print_heatmap("lake_i.dat", u_i0, npoints, h);
     gettimeofday(&cpu_start, NULL);
-    run_cpu(u_cpu, u_i0, u_i1, pebs, npoints, h, end_time);
+    // run_cpu(u_cpu, u_i0, u_i1, pebs, npoints, h, end_time);
     gettimeofday(&cpu_end, NULL);
 
     elapsed_cpu = ((cpu_end.tv_sec + cpu_end.tv_usec * 1e-6)-(
                   cpu_start.tv_sec + cpu_start.tv_usec * 1e-6));
-    printf("CPU took %f seconds\n", elapsed_cpu);
-    print_heatmap("lake_f.dat", u_cpu, npoints, h);
+    // printf("CPU took %f seconds\n", elapsed_cpu);
+    // print_heatmap("lake_f.dat", u_cpu, npoints, h);
   }
 
   // Wait for processor to complete cpu calculation
@@ -127,12 +127,12 @@ int main(int argc, char *argv[]){
   elapsed_gpu = ((gpu_end.tv_sec + gpu_end.tv_usec * 1e-6)-(
                   gpu_start.tv_sec + gpu_start.tv_usec * 1e-6));
 
-  MPI_Barrier(MPI_COMM_WORLD);
+   MPI_Barrier(MPI_COMM_WORLD);
 
   //root processors prints out GPU timing
-  if(rank == 0){
-    printf("GPU took %f seconds\n", elapsed_gpu);
-  }
+   if(rank == 0){
+     printf("GPU took %f seconds\n", elapsed_gpu);
+   }
 
   //print out different .dat files for the quadrant computed at each node
   char filename[13];
@@ -140,7 +140,7 @@ int main(int argc, char *argv[]){
 
   print_heatmap(filename, u_gpu, npoints, h);
 
-  //free resources
+  // free resources
   free(u_i0);
   free(u_i1);
   free(pebs);
@@ -183,7 +183,7 @@ void run_cpu(double *u, double *u0, double *u1, double *pebbles, int n, double h
 
 //initialize the location of the pebbles in the grid
 void init_pebbles(double *p, int pn, int n){
-
+  //yaha n already multiplied by 2 aa raha hai
   int i, j, k, idx;
   int sz;
 
@@ -193,7 +193,7 @@ void init_pebbles(double *p, int pn, int n){
   for( k = 0; k < pn ; k++ ){
 
     i = rand() % (n - 4) + 2;
-    j = rand() % (n - 4) + 2;
+    j = rand() % (n/2 - 4) + 2;
     sz = rand() % MAX_PSZ;
     idx = j + i * n;
     p[idx] = (double) sz;
@@ -210,9 +210,12 @@ __host__ double f(double p, double t){
 //moves time forward by dt and checks if the time is under the given time limit
 int tpdt(double *t, double dt, double tf){
 
-  if((*t) + dt > tf) return 0;
-  (*t) = (*t) + dt;
+  if((*t) + 1 > tf) return 0;
+  (*t) = (*t) + 1;
   return 1;
+  // if((*t) + dt > tf) return 0;
+  // (*t) = (*t) + dt;
+  // return 1;
 }
 
 //initializes the grid along with pebble location

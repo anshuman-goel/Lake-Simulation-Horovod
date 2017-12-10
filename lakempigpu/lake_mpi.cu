@@ -9,6 +9,7 @@
 * LAST REVISED: 9/19/2017
 ******************************************************************************/
 
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -50,15 +51,17 @@ int main(int argc, char *argv[]){
   int     npebs     = atoi(argv[2]);
   double  end_time  = (double)atof(argv[3]);
   int     nthreads  = atoi(argv[4]);
-  int 	  narea	    = npoints * npoints;
+  int     narea     = npoints * npoints;
   int     rank, size;
 
   double *u_i0, *u_i1;
   double *u_cpu, *u_gpu, *pebs;
   double h;
 
-  double elapsed_cpu, elapsed_gpu;
-  struct timeval cpu_start, cpu_end, gpu_start, gpu_end;
+  // cpu_start, cpu_end,
+  // cpu_start, cpu_end
+  double elapsed_gpu; 
+  struct timeval gpu_start, gpu_end; 
 
   u_i0 = (double*)malloc(sizeof(double) * narea);
   u_i1 = (double*)malloc(sizeof(double) * narea);
@@ -106,12 +109,12 @@ int main(int argc, char *argv[]){
   if (rank == 0){
 
     print_heatmap("lake_i.dat", u_i0, npoints, h);
-    gettimeofday(&cpu_start, NULL);
+    // gettimeofday(&cpu_start, NULL);
     // run_cpu(u_cpu, u_i0, u_i1, pebs, npoints, h, end_time);
-    gettimeofday(&cpu_end, NULL);
+    // gettimeofday(&cpu_end, NULL);
 
-    elapsed_cpu = ((cpu_end.tv_sec + cpu_end.tv_usec * 1e-6)-(
-                  cpu_start.tv_sec + cpu_start.tv_usec * 1e-6));
+    // elapsed_cpu = ((cpu_end.tv_sec + cpu_end.tv_usec * 1e-6)-(
+    //               cpu_start.tv_sec + cpu_start.tv_usec * 1e-6));
     // printf("CPU took %f seconds\n", elapsed_cpu);
     // print_heatmap("lake_f.dat", u_cpu, npoints, h);
   }
@@ -152,34 +155,34 @@ int main(int argc, char *argv[]){
   return 0;
 }
 
-// simulates the state of the grid after the given time, using a 13-point stencil function
-void run_cpu(double *u, double *u0, double *u1, double *pebbles, int n, double h, double end_time){
+// // simulates the state of the grid after the given time, using a 13-point stencil function
+// void run_cpu(double *u, double *u0, double *u1, double *pebbles, int n, double h, double end_time){
 
-  double *un, *uc, *uo;
-  double t, dt;
+//   double *un, *uc, *uo;
+//   double t, dt;
 
-  un = (double*)malloc(sizeof(double) * n * n);
-  uc = (double*)malloc(sizeof(double) * n * n);
-  uo = (double*)malloc(sizeof(double) * n * n);
+//   un = (double*)malloc(sizeof(double) * n * n);
+//   uc = (double*)malloc(sizeof(double) * n * n);
+//   uo = (double*)malloc(sizeof(double) * n * n);
 
-  memcpy(uo, u0, sizeof(double) * n * n);
-  memcpy(uc, u1, sizeof(double) * n * n);
+//   memcpy(uo, u0, sizeof(double) * n * n);
+//   memcpy(uc, u1, sizeof(double) * n * n);
 
-  t = 0.;
-  dt = h / 2.;
+//   t = 0.;
+//   dt = h / 2.;
 
-  while(1){
+//   while(1){
 
-    evolve(un, uc, uo, pebbles, n, h, dt, t);
-    //save most recent two time-stamps into uo and uc
-    memcpy(uo, uc, sizeof(double) * n * n);
-    memcpy(uc, un, sizeof(double) * n * n);
+//     evolve(un, uc, uo, pebbles, n, h, dt, t);
+//     //save most recent two time-stamps into uo and uc
+//     memcpy(uo, uc, sizeof(double) * n * n);
+//     memcpy(uc, un, sizeof(double) * n * n);
 
-    if(!tpdt(&t,dt,end_time)) break;
-  }
+//     if(!tpdt(&t,dt,end_time)) break;
+//   }
 
-  memcpy(u, un, sizeof(double) * n * n);
-}
+//   memcpy(u, un, sizeof(double) * n * n);
+// }
 
 //initialize the location of the pebbles in the grid
 void init_pebbles(double *p, int pn, int n){
@@ -231,43 +234,43 @@ void init(double *u, double *pebbles, int n){
   }
 }
 
-//updates the grid state from time t to time t+dt
-void evolve(double *un, double *uc, double *uo, double *pebbles, int n, double h, double dt, double t){
+// //updates the grid state from time t to time t+dt
+// void evolve(double *un, double *uc, double *uo, double *pebbles, int n, double h, double dt, double t){
 
-  int i, j, idx;
+//   int i, j, idx;
 
-  for( i = 0; i < n; i++){
-    for( j = 0; j < n; j++){
+//   for( i = 0; i < n; i++){
+//     for( j = 0; j < n; j++){
 
-      idx = j + i * n;
-      //values at lake edge points are set to zero
-      if( i == 0 || i == n - 1 || j == 0 || j == n - 1
-          || i == n - 2 || i == 1 || j == n - 2 || j == 1){
+//       idx = j + i * n;
+//       //values at lake edge points are set to zero
+//       if( i == 0 || i == n - 1 || j == 0 || j == n - 1
+//           || i == n - 2 || i == 1 || j == n - 2 || j == 1){
 
-        un[idx] = 0.;
-      }
-      else{
-        //compute the 13-point stencil function for every grid point
-        un[idx] = 2*uc[idx] - uo[idx] + VSQR *(dt * dt) *
-                  ((  uc[idx-1] // WEST
-                      + uc[idx+1] // EAST
-                      + uc[idx + n] // SOUTH
-                      + uc[idx - n] // NORTH
-                     + 0.25*( uc[idx - n - 1 ] // NORTHWEST
-                            + uc[idx - n + 1 ] // NORTHEAST
-                            + uc[idx + n - 1 ] // SOUTHWEST
-                            + uc[idx + n + 1 ] // SOUTHEAST
-                            )
-                    + 0.125*( uc[idx - 2 ]  // WESTWEST
-                            + uc[idx + 2 ] // EASTEAST
-                            + uc[idx - 2 * n ] // NORTHNORTH
-                            + uc[idx + 2 * n ] // SOUTHSOUTH
-                            )
-                    - 6 * uc[idx])/(h * h) + f(pebbles[idx],t));
-      }
-    }
-  }
-}
+//         un[idx] = 0.;
+//       }
+//       else{
+//         //compute the 13-point stencil function for every grid point
+//         un[idx] = 2*uc[idx] - uo[idx] + VSQR *(dt * dt) *
+//                   ((  uc[idx-1] // WEST
+//                       + uc[idx+1] // EAST
+//                       + uc[idx + n] // SOUTH
+//                       + uc[idx - n] // NORTH
+//                      + 0.25*( uc[idx - n - 1 ] // NORTHWEST
+//                             + uc[idx - n + 1 ] // NORTHEAST
+//                             + uc[idx + n - 1 ] // SOUTHWEST
+//                             + uc[idx + n + 1 ] // SOUTHEAST
+//                             )
+//                     + 0.125*( uc[idx - 2 ]  // WESTWEST
+//                             + uc[idx + 2 ] // EASTEAST
+//                             + uc[idx - 2 * n ] // NORTHNORTH
+//                             + uc[idx + 2 * n ] // SOUTHSOUTH
+//                             )
+//                     - 6 * uc[idx])/(h * h) + f(pebbles[idx],t));
+//       }
+//     }
+//   }
+// }
 
 //print grid values to a file
 void print_heatmap(const char *filename, double *u, int n, double h){

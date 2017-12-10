@@ -100,12 +100,13 @@ __global__ static void evolve(double *un, double *uc, double *uo,
   int i, j;
   unsigned int bid = blockDim.x * blockIdx.x + threadIdx.x;
   
+  printf("bid = %d \n", bid);
   //set the origin grid points for each quadrant for every processor node
   if(*rank == 0){
 
     i = (bid / (*n/2));
     j = (bid % (*n/2));
-    printf("i = %d\n", i);
+    
   }
   // else if (*rank == 1){
 
@@ -219,22 +220,21 @@ void Recv_Col(int start_row, int start_col, int k, int source, double *u)
 // simulates the state of the grid after the given time, using a 13-point stencil function
 void run_gpu(double *u, double *u0, double *u1, double *pebbles, int n,
             double h, double end_time, int nthreads, int rank){
-	cudaEvent_t kstart, kstop;
-	float ktime;
-
-	/* HW2: Define your local variables here */
+  cudaEvent_t kstart, kstop;
+  float ktime;
+  
+  /* HW2: Define your local variables here */
 
   double t=0.0;
   double dt = h / 2.0;
   //compute the number of blocks for every GPU for a MPI node
-  int blocks = (int)pow(n / nthreads, 2) / 4;
+  int blocks = (int)pow(n / nthreads, 2) / 2;
   //compute the number of threads per block for every GPU for a MPI node
   int threads = nthreads * nthreads;
-
   //boundary co-ordinates for every quadrant
   //including the additional rows and columns required for edge points
   //to compute the 13 point stencil function
-  int r_min, r_max, c_min, c_max;
+  int r_min, r_max; // c_min, c_max;
 
   //device copies of the host variables
   int *blocks_d, *threads_d, *n_d, *rank_d;
@@ -259,12 +259,12 @@ void run_gpu(double *u, double *u0, double *u1, double *pebbles, int n,
   cudaMalloc( (void **) &rank_d, sizeof(int) * 1 );
 
   /* Set up device timers */
-	CUDA_CALL(cudaSetDevice(0));
-	CUDA_CALL(cudaEventCreate(&kstart));
-	CUDA_CALL(cudaEventCreate(&kstop));
+  CUDA_CALL(cudaSetDevice(0));
+  CUDA_CALL(cudaEventCreate(&kstart));
+  CUDA_CALL(cudaEventCreate(&kstop));
 
-	/* Start GPU computation timer */
-	CUDA_CALL(cudaEventRecord(kstart, 0));
+  /* Start GPU computation timer */
+  CUDA_CALL(cudaEventRecord(kstart, 0));
 
   //copy host variables to device
   CUDA_CALL(cudaMemcpy( uc_d, u1, sizeof(double) * n * n, cudaMemcpyHostToDevice ));
@@ -284,8 +284,8 @@ void run_gpu(double *u, double *u0, double *u1, double *pebbles, int n,
   if(rank == 0){
     r_min = 0;
     r_max = n / 2 + 1;
-    c_min = 0;
-    c_max = n / 2 + 1;
+    // c_min = 0;
+    // c_max = n / 2 + 1;
   }
   // else if (rank == 1){
   //   r_min = 0;
@@ -296,8 +296,8 @@ void run_gpu(double *u, double *u0, double *u1, double *pebbles, int n,
   else if (rank == 1){
     r_min = n / 2 - 2;
     r_max = n - 1;
-    c_min = 0;
-    c_max = n / 2 + 1;
+    // c_min = 0;
+    // c_max = n / 2 + 1;
   }
   // else if (rank == 3){
   //   r_min = n / 2 - 2;
@@ -310,11 +310,12 @@ void run_gpu(double *u, double *u0, double *u1, double *pebbles, int n,
   //compute state of the grid over the given time
   while(1){
 
+
     evolve<<< blocks, threads >>>(un_d, uc_d, uo_d, pebs_d, n_d, h_d, dt_d,
                                   t_d, blocks_d, threads_d, rank_d);
-
+    
     CUDA_CALL(cudaMemcpy( u, un_d, sizeof(double) * n * n, cudaMemcpyDeviceToHost ));
-
+    
     //exit from the loop if time exceeds final timestamp
     if(!tpdt(&t,dt,end_time)){
       break;
@@ -368,12 +369,12 @@ void run_gpu(double *u, double *u0, double *u1, double *pebbles, int n,
 
 
   /* Stop GPU computation timer */
-	CUDA_CALL(cudaEventRecord(kstop, 0));
-	CUDA_CALL(cudaEventSynchronize(kstop));
-	CUDA_CALL(cudaEventElapsedTime(&ktime, kstart, kstop));
+  CUDA_CALL(cudaEventRecord(kstop, 0));
+  CUDA_CALL(cudaEventSynchronize(kstop));
+  CUDA_CALL(cudaEventElapsedTime(&ktime, kstart, kstop));
 
   if(rank==0){
-	 printf("GPU computation: %f msec\n", ktime);
+   printf("GPU computation: %f msec\n", ktime);
   }
 
   //free resources
@@ -389,7 +390,7 @@ void run_gpu(double *u, double *u0, double *u1, double *pebbles, int n,
   cudaFree(dt_d);
   cudaFree(rank_d);
 
-	/* timer cleanup */
-	CUDA_CALL(cudaEventDestroy(kstart));
-	CUDA_CALL(cudaEventDestroy(kstop));
+  /* timer cleanup */
+  CUDA_CALL(cudaEventDestroy(kstart));
+  CUDA_CALL(cudaEventDestroy(kstop));
 }

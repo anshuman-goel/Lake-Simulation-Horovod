@@ -42,8 +42,8 @@ Elapsed time: 77.0818769932 seconds
 Elapsed time: 77.0905389786 seconds
 
 There is a huge difference between the execution time of lake.py on CPU cores (without MPI), and running lake-horo.py (with MPI).
-This accounts mainly because of the communication overhead between the two nodes in the latter case. In every iteration of tensorflow, the bottom rank will communicate its top rows to the top rank's bottom rows.
-The top rank will communicate its bottom rows to the bottom rank's top rows.   
+This accounts mainly because of the communication overhead between the two nodes in the latter case. In every iteration of TensorFlow, the bottom rank will communicate its top rows to the top rank's bottom rows.
+The top rank will communicate its bottom rows to the bottom rank's top rows. Since the only major difference between lake.py and lake-horo.py in terms of code is the broadcast function in the latter, this could also be a factor in increasing the execution time.
 
 
 
@@ -56,7 +56,7 @@ mpirun -np 2 ./lake-horo.py 512 40 400
 Elapsed time: 5.13121509552 seconds
 Elapsed time: 5.12291288376 seconds
 
-The elapsed times are somewhat comparable here. The extra time taken by lake-horo.py is the communication overhead between the 2 MPI nodes. In every iteration of tensorflow, the bottom rank will communicate its top rows to the top rank's bottom rows. The top rank will communicate its bottom rows to the bottom rank's top rows.   
+The elapsed times are somewhat comparable here. The extra time taken by lake-horo.py is the communication overhead between the 2 MPI nodes. In every iteration of Tensorflow, the bottom rank will communicate its top rows to the top rank's bottom rows. The top rank will communicate its bottom rows to the bottom rank's top rows.   
 
 
 
@@ -69,5 +69,43 @@ We also learnt how to write TensorFlow programs, and also how to create graphs i
 ----------------EXTRA CREDIT--------------------
 
 
+Comparison between lake-horo.py (using capability 3.0 GPUs) with GPU+MPI version of HW2 P3:
+We modified the lake files by changing the grid size to match the lake-horo.py grid structure and getting a one-to-one comparison.  
+
+HW2 P3 modifications:
+
+
+ 	<-- n -->
+|	|---------|---------|
+|	|	Q1	  |			|
+	|		  |			|
+2n	|---------|---------|
+	|	Q2	  |			|
+| 	|		  |			|
+|	|---------|---------|
+
+
+
+We are only using quadrants Q1 and Q2 for a one-to-one mapping to lake-horo.py
+We have disabled all the column communication from the original code and are only sending the top and bottom rows of quadrants Q2 and Q1 to each other respectively.
+We have also restricted the pebble generation and the ripple computation to only quadrants Q1 and Q2. This means our program only requires ( and enforces ) 2 Nodes to be run.
+
+srun -pgtx780 -N2 -n2 --pty /bin/bash
+make
+prun ./lake 512 40 400.0 1
+
+GPU computation: 2795.642822 msec
+GPU took 3.752016 seconds
+
+
+The modified HW2 (V3) takes 3.75 seconds while the lake-horo.py code on gtx780 node takes, about 5 seconds.
+
+mpirun -np 2 ./lake-horo.py 512 40 400
+
+Elapsed time: 5.13121509552 seconds
+Elapsed time: 5.12291288376 seconds
+
+
+The lake-horo.py has a Tensorflow overhead which involves generation of the data-flow graph and optimizations which probably causes it to take more time. TensorFlow implementation will probably win in performance when there are large computations performed with a heavy scope of optimization which will be difficult to implement manually.
 
 ------------------------------------------------

@@ -62,7 +62,7 @@ The elapsed times are somewhat comparable here. The extra time taken by lake-hor
 
 Lessons learnt:
 We understood how Horovod uses MPI and TensorFlow to perform communication and computations across multiple nodes/GPUs in a cluster. 
-we also learnt how to write TensorFlow programs, and also how to create graphs in TensorFlow and its execution model.
+We also learnt how to write TensorFlow programs, and also how to create graphs in TensorFlow and its execution model.
 
 
 

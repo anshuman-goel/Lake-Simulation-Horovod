@@ -19,9 +19,10 @@ def DisplayArray(a, fmt='jpeg', rng=[0,1]):
   """Display an array as a picture."""
   a = (a - rng[0])/float(rng[1] - rng[0])*255
   a = np.uint8(np.clip(a, 0, 255))
-  name = "lake0_py.jpg"
-  if hvd.rank() == 1:
-    name = "lake1_py.jpg"  
+  name = "lake_py_" + str(hvd.rank()) + ".jpg"
+  # name = "lake0_py.jpg"
+  # if hvd.rank() == 1:
+  #   name = "lake1_py.jpg"  
   with open(name,"w") as f:
       PIL.Image.fromarray(a).save(f, "jpeg")
 
@@ -31,7 +32,7 @@ config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 config.gpu_options.visible_device_list = str(hvd.local_rank())
 sess = tf.InteractiveSession()
-#sess = tf.InteractiveSession(config=config) #Use only for capability 3.0 GPU
+# sess = tf.InteractiveSession(config=config) #Use only for capability 3.0 GPU
 
 # Computational Convenience Functions
 def make_kernel(a):
